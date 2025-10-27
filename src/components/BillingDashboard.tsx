@@ -1,0 +1,1313 @@
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Receipt, DollarSign, Users, Calendar, TrendingUp, BarChart3, PieChart, Download, FileText, BarChart3 as BarChart3Icon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { buildMonthlySeries, movingAverageForecast, detectAnomalies } from '@/utils/analytics';
+import { KPIAlerts } from '@/components/KPIAlerts';
+import { InlineChatbot } from './InlineChatbot';
+import { Logo } from './Logo';
+
+interface BillingDashboardProps {
+  data: any[];
+  onBack: () => void;
+  onGoHome?: () => void;
+  doctorRosterData?: any[];
+}
+
+export const BillingDashboard: React.FC<BillingDashboardProps> = ({ data, onBack, onGoHome, doctorRosterData }) => {
+  const [insights, setInsights] = useState<any>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
+
+  // Export dashboard data as JSON
+  const exportDashboard = () => {
+    const dashboardData = {
+      metadata: {
+        timestamp: new Date().toISOString(),
+        industry: 'opbilling',
+        dataRows: data.length,
+        hasDoctorRosterData: !!doctorRosterData
+      },
+      data: data,
+      doctorRosterData: doctorRosterData,
+      insights: insights
+    };
+    
+    const blob = new Blob([JSON.stringify(dashboardData, null, 2)], { 
+      type: 'application/json' 
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `billing-dashboard-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Field accessor
+  const getFieldValue = (row: any, possibleNames: string[], fallback: any = undefined) => {
+    for (const name of possibleNames) {
+      if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
+        return row[name];
+      }
+    }
+    return fallback;
+  };
+
+  const parseAmount = (value: any): number => {
+    if (value === undefined || value === null || value === '') return 0;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const str = String(value).replace(/[,\s]/g, '').replace(/[^0-9.-]/g, '');
+    const n = parseFloat(str);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  useEffect(() => {
+    if (data && data.length > 0) {
+      generateInsights();
+    }
+  }, [data]);
+
+  const generateInsights = () => {
+    const totalBills = data.length;
+    const totalAmount = data.reduce((sum, row) => sum + parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount'])), 0);
+    const averageAmount = totalAmount / totalBills;
+    
+    // Create doctor ID to specialty mapping first (needed for department analysis)
+    const doctorIdToSpecialty: Record<string, string> = (doctorRosterData || []).reduce((acc, row) => {
+      const id = getFieldValue(row, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id']);
+      const spec = getFieldValue(row, ['Specialty', 'specialty', 'Specialization', 'specialization', 'Speciality', 'speciality']);
+      if (id && spec) {
+        acc[String(id)] = String(spec);
+      }
+      return acc;
+    }, {} as Record<string, string>);
+
+    // Payment status analysis
+    const paymentStatus = data.reduce((acc, row) => {
+      const status = getFieldValue(row, ['Payment_Status', 'PaymentStatus', 'Status', 'Payment_Status_Desc'], 'Unknown') || 'Unknown';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Department analysis
+    // Derive department from provided field or from procedure code mapping
+    const procToDept: Record<string, string> = { 
+      'OP100': 'General Medicine', 
+      'OP200': 'Orthopedics', 
+      'OP300': 'Cardiology',
+      'OP400': 'Dermatology',
+      'OP500': 'Neurology'
+    };
+    const departmentRevenue = data.reduce((acc, row) => {
+      const procedure = getFieldValue(row, ['Procedure_Code', 'Service_Code', 'Procedure', 'Proc_Code']);
+      const doctorId = getFieldValue(row, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id']);
+      
+      // Try to get department from doctor roster first
+      let dept = 'Unknown';
+      if (doctorId && doctorIdToSpecialty[String(doctorId)]) {
+        dept = doctorIdToSpecialty[String(doctorId)];
+      } else if (procedure && procToDept[String(procedure)]) {
+        dept = procToDept[String(procedure)];
+      } else {
+        const deptField = getFieldValue(row, ['Department', 'Dept', 'Specialty', 'specialty']);
+        dept = deptField ? String(deptField) : `Procedure ${procedure || 'Unknown'}`;
+      }
+      
+      const amount = parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount']));
+      if (!acc[dept]) acc[dept] = { count: 0, revenue: 0 };
+      acc[dept].count += 1;
+      acc[dept].revenue += amount;
+      return acc;
+    }, {});
+
+    // Payer type analysis
+    const payerDistribution = data.reduce((acc, row) => {
+      const payer = getFieldValue(row, ['Payer_Type', 'Payer', 'PayerType'], 'Unknown') || 'Unknown';
+      acc[payer] = (acc[payer] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Service analysis
+    const serviceRevenue = data.reduce((acc, row) => {
+      const service = getFieldValue(row, ['Procedure_Code', 'Service_Code', 'Procedure', 'Proc_Code'], 'Unknown') || 'Unknown';
+      const amount = parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount']));
+      if (!acc[service]) acc[service] = { count: 0, revenue: 0 };
+      acc[service].count += 1;
+      acc[service].revenue += amount;
+      return acc;
+    }, {});
+
+    // Outstanding analysis
+    const outstandingAmount = data
+      .filter(row => {
+        const status = getFieldValue(row, ['Payment_Status', 'PaymentStatus', 'Status', 'Payment_Status_Desc'], '').toString();
+        return status === 'Pending' || status === 'Outstanding' || status === 'Unpaid';
+      })
+      .reduce((sum, row) => sum + parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount'])), 0);
+
+    // Date analysis
+    const dateRange = data
+      .map(row => getFieldValue(row, ['Bill_Date', 'Visit_Date', 'Date', 'Transaction_Date']))
+      .map(v => new Date(String(v)))
+      .filter(date => !isNaN(date.getTime()));
+    const minDate = dateRange.length > 0 ? new Date(Math.min(...dateRange.map(d => d.getTime()))) : null;
+    const maxDate = dateRange.length > 0 ? new Date(Math.max(...dateRange.map(d => d.getTime()))) : null;
+
+    // Specialty performance (via doctor roster mapping) - already created above
+
+
+    const specialtyAgg = data.reduce((acc, row) => {
+      const doctorId = getFieldValue(row, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id']);
+      const deptFallback = getFieldValue(row, ['Department', 'Dept', 'Specialty', 'specialty']);
+      
+      // Try to get specialty from doctor roster first, then fall back to procedure code mapping
+      let specialty = 'Unknown';
+      
+      if (doctorId && doctorIdToSpecialty[String(doctorId)]) {
+        specialty = doctorIdToSpecialty[String(doctorId)];
+      } else if (deptFallback) {
+        specialty = String(deptFallback);
+      } else {
+        // Map procedure codes to specialties as fallback
+        const procedureCode = getFieldValue(row, ['Procedure_Code', 'Service_Code', 'Procedure', 'Proc_Code']);
+        const procToSpecialty: Record<string, string> = { 
+          'OP100': 'General Medicine', 
+          'OP200': 'Orthopedics', 
+          'OP300': 'Cardiology',
+          'OP400': 'Dermatology',
+          'OP500': 'Neurology'
+        };
+        specialty = procedureCode && procToSpecialty[String(procedureCode)] 
+          ? procToSpecialty[String(procedureCode)] 
+          : `Procedure ${procedureCode || 'Unknown'}`;
+      }
+      
+      const amount = parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount']));
+      if (!acc[specialty]) acc[specialty] = { revenue: 0, visits: 0 };
+      acc[specialty].revenue += amount;
+      acc[specialty].visits += 1;
+      
+      return acc;
+    }, {} as Record<string, { revenue: number; visits: number }>);
+
+    // Doctor workload vs revenue
+    const doctorAgg = data.reduce((acc, row) => {
+      const doctorId = getFieldValue(row, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id']);
+      const doctorName = getFieldValue(row, ['Doctor_Name', 'doctor_name', 'DoctorName', 'Name', 'name'], String(doctorId || 'Unknown'));
+      const patientId = getFieldValue(row, ['Patient_ID', 'patient_id', 'PatientId']);
+      const amount = parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount']));
+      const key = String(doctorId || doctorName || 'Unknown');
+      if (!acc[key]) acc[key] = { doctorId: key, doctorName, patients: new Set<string>(), revenue: 0 };
+      if (patientId) acc[key].patients.add(String(patientId));
+      acc[key].revenue += amount;
+      return acc;
+    }, {} as Record<string, { doctorId: string; doctorName: string; patients: Set<string>; revenue: number }>);
+
+    const doctorAggValues = Object.values(doctorAgg) as Array<{ doctorId: string; doctorName: string; patients: Set<string>; revenue: number }>;
+    const workloadScatter = doctorAggValues.map(d => ({
+      x: d.patients.size,
+      y: d.revenue,
+      z: Math.max(4, Math.min(12, d.revenue / 1000)),
+      doctorId: d.doctorId,
+      doctorName: d.doctorName
+    }));
+
+    // Payer-Procedure matrix
+    const matrixAgg = data.reduce((acc, row) => {
+      const payer = getFieldValue(row, ['Payer_Type', 'Payer', 'PayerType'], 'Unknown') || 'Unknown';
+      const proc = getFieldValue(row, ['Procedure_Code', 'Service_Code', 'Procedure', 'Proc_Code'], 'Unknown') || 'Unknown';
+      const amount = parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount']));
+      if (!acc[proc]) acc[proc] = {} as Record<string, number>;
+      acc[proc][payer] = (acc[proc][payer] || 0) + amount;
+      return acc;
+    }, {} as Record<string, Record<string, number>>);
+
+    // Age-Service stacked
+    const buckets = [
+      { name: '0-18', min: 0, max: 18 },
+      { name: '19-40', min: 19, max: 40 },
+      { name: '41-65', min: 41, max: 65 },
+      { name: '65+', min: 66, max: Infinity }
+    ];
+    const ageServiceAgg: Record<string, Record<string, number>> = {};
+    data.forEach(row => {
+      const age = Number(getFieldValue(row, ['Age', 'Patient_Age']));
+      const proc = getFieldValue(row, ['Procedure_Code', 'Service_Code', 'Procedure', 'Proc_Code'], 'Unknown') || 'Unknown';
+      if (!Number.isFinite(age)) return;
+      const bucket = buckets.find(b => age >= b.min && age <= b.max)?.name || 'Unknown';
+      if (!ageServiceAgg[bucket]) ageServiceAgg[bucket] = {};
+      ageServiceAgg[bucket][proc] = (ageServiceAgg[bucket][proc] || 0) + 1;
+    });
+
+    // Consent KPI and anomalies
+    const totalWithConsentFlag = data.filter(r => r.Consent_Flag !== undefined).length;
+    const consentYes = data.filter(r => r.Consent_Flag === 'Y').length;
+    const consentRate = totalWithConsentFlag > 0 ? (consentYes / totalWithConsentFlag) : 0;
+
+    const doctorConsent: Record<string, { yes: number; total: number; name: string }> = {};
+    data.forEach(r => {
+      const did = getFieldValue(r, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id'], 'Unknown');
+      const name = getFieldValue(r, ['Doctor_Name', 'doctor_name', 'DoctorName', 'Name', 'name'], String(did));
+      if (!doctorConsent[did]) doctorConsent[did] = { yes: 0, total: 0, name };
+      const cflag = getFieldValue(r, ['Consent_Flag', 'Consent', 'Has_Consent']);
+      if (cflag !== undefined) {
+        doctorConsent[did].total += 1;
+        if (cflag === 'Y' || cflag === 'Yes' || cflag === 'true' || cflag === true) doctorConsent[did].yes += 1;
+      }
+    });
+    const consentAnomalies = Object.entries(doctorConsent)
+      .map(([id, v]) => ({ id, name: v.name, rate: v.total > 0 ? v.yes / v.total : 1 }))
+      .filter(d => d.rate < 0.9)
+      .sort((a, b) => a.rate - b.rate)
+      .slice(0, 5);
+
+    setInsights({
+      totalBills,
+      totalAmount,
+      averageAmount,
+      paymentStatus,
+      departmentRevenue,
+      payerDistribution,
+      serviceRevenue,
+      outstandingAmount,
+      dateRange: { min: minDate, max: maxDate },
+      paidBills: paymentStatus.Paid || 0,
+      pendingBills: paymentStatus.Pending || paymentStatus.Outstanding || 0,
+      specialtyAgg,
+      workloadScatter,
+      matrixAgg,
+      ageServiceAgg,
+      consentRate,
+      consentAnomalies
+    });
+  };
+
+  const prepareChartData = () => {
+    if (!insights) return { barData: [], pieData: [], pieLabel: 'Payment Status' };
+
+    // Bar chart: Department revenue
+    const barData = Object.entries(insights.departmentRevenue || {})
+      .map(([name, data]: [string, any]) => ({ 
+        name, 
+        revenue: data.revenue,
+        count: data.count 
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    // Pie chart: Prefer payment status; if mostly Unknown or missing, fall back to payer distribution
+    const statusEntries = Object.entries(insights.paymentStatus || {});
+    const nonUnknown = statusEntries.filter(([k]) => k && k !== 'Unknown');
+    const usePayer = nonUnknown.length === 0;
+    const pieSource = usePayer ? (insights.payerDistribution || {}) : (insights.paymentStatus || {});
+    const pieLabel = usePayer ? 'Payer Type' : 'Payment Status';
+    const pieData = Object.entries(pieSource)
+      .map(([name, count], index) => ({
+        name,
+        value: count as number,
+        fill: ['#3b82f6', '#ef4444', '#f59e0b', '#10b981'][index % 4]
+      }));
+
+    return { barData, pieData, pieLabel };
+  };
+
+  const { barData, pieData, pieLabel } = prepareChartData();
+
+  const chartConfig = {
+    revenue: {
+      label: "Revenue",
+      color: "#3b82f6",
+    },
+    count: {
+      label: "Count",
+      color: "#10b981",
+    },
+  };
+
+  // Export functions
+  const exportBillingData = () => {
+    if (!data || data.length === 0) return;
+    
+    const headers = Object.keys(data[0] || {});
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(h => `"${row[h] || ''}"`).join(',')
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'billing_data.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportRevenueAnalysis = () => {
+    if (!data || data.length === 0) return;
+    
+    // Revenue analysis by department and specialty
+    const revenueAnalysis = data.reduce((acc, row) => {
+      const doctorId = getFieldValue(row, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id']);
+      const doctorName = getFieldValue(row, ['Doctor_Name', 'doctor_name', 'DoctorName', 'Name', 'name'], String(doctorId || 'Unknown'));
+      const specialty = doctorRosterData ? 
+        (doctorRosterData.find(dr => getFieldValue(dr, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id']) === doctorId) ? 
+          getFieldValue(doctorRosterData.find(dr => getFieldValue(dr, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id']) === doctorId), ['Specialty', 'specialty', 'Specialization', 'specialization', 'Speciality', 'speciality']) : 'Unknown') : 
+        'Unknown';
+      const amount = parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount']));
+      const payerType = getFieldValue(row, ['Payer_Type', 'Payer', 'PayerType'], 'Unknown');
+      const procedureCode = getFieldValue(row, ['Procedure_Code', 'Service_Code', 'Procedure', 'Proc_Code'], 'Unknown');
+      const visitDate = getFieldValue(row, ['Bill_Date', 'Visit_Date', 'Date', 'Transaction_Date']);
+      
+      const key = `${doctorName} (${doctorId})`;
+      if (!acc[key]) {
+        acc[key] = { 
+          doctorName, 
+          doctorId, 
+          specialty, 
+          totalRevenue: 0, 
+          patientCount: new Set(), 
+          procedures: new Set(),
+          payerTypes: new Set(),
+          visits: 0
+        };
+      }
+      acc[key].totalRevenue += amount;
+      acc[key].visits += 1;
+      if (getFieldValue(row, ['Patient_ID', 'patient_id', 'PatientId'])) {
+        acc[key].patientCount.add(getFieldValue(row, ['Patient_ID', 'patient_id', 'PatientId']));
+      }
+      acc[key].procedures.add(procedureCode);
+      acc[key].payerTypes.add(payerType);
+      
+      return acc;
+    }, {});
+
+    const csvContent = [
+      'Doctor Name,Doctor ID,Specialty,Total Revenue,Unique Patients,Total Visits,Avg Revenue per Visit,Procedures,Payer Types',
+      ...Object.values(revenueAnalysis).map((analysis: any) => {
+        const avgRevenue = analysis.visits > 0 ? (analysis.totalRevenue / analysis.visits).toFixed(2) : 0;
+        const proceduresStr = Array.from(analysis.procedures).join('; ');
+        const payerTypesStr = Array.from(analysis.payerTypes).join('; ');
+        return `"${analysis.doctorName}","${analysis.doctorId}","${analysis.specialty}",${analysis.totalRevenue},${analysis.patientCount.size},${analysis.visits},${avgRevenue},"${proceduresStr}","${payerTypesStr}"`;
+      })
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'revenue_analysis.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportPaymentStatus = () => {
+    if (!data || data.length === 0) return;
+    
+    // Payment status analysis
+    const paymentAnalysis = data.reduce((acc, row) => {
+      const status = getFieldValue(row, ['Payment_Status', 'PaymentStatus', 'Status', 'Payment_Status_Desc'], 'Unknown') || 'Unknown';
+      const amount = parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount']));
+      const payerType = getFieldValue(row, ['Payer_Type', 'Payer', 'PayerType'], 'Unknown');
+      const visitDate = getFieldValue(row, ['Bill_Date', 'Visit_Date', 'Date', 'Transaction_Date']);
+      const patientName = getFieldValue(row, ['Patient_Name', 'patient_name', 'PatientName', 'Name', 'name'], 'Unknown');
+      const doctorName = getFieldValue(row, ['Doctor_Name', 'doctor_name', 'DoctorName', 'Name', 'name'], 'Unknown');
+      
+      if (!acc[status]) {
+        acc[status] = { 
+          status, 
+          count: 0, 
+          totalAmount: 0, 
+          payerDistribution: {},
+          details: []
+        };
+      }
+      acc[status].count += 1;
+      acc[status].totalAmount += amount;
+      acc[status].payerDistribution[payerType] = (acc[status].payerDistribution[payerType] || 0) + 1;
+      acc[status].details.push({
+        patientName,
+        doctorName,
+        amount,
+        payerType,
+        visitDate
+      });
+      
+      return acc;
+    }, {});
+
+    const csvContent = [
+      'Payment Status,Count,Total Amount,Average Amount',
+      ...Object.values(paymentAnalysis).map((analysis: any) => {
+        const avgAmount = analysis.count > 0 ? (analysis.totalAmount / analysis.count).toFixed(2) : 0;
+        return `${analysis.status},${analysis.count},${analysis.totalAmount},${avgAmount}`;
+      }),
+      '',
+      'Payment Status Details',
+      'Status,Patient Name,Doctor Name,Amount,Payer Type,Visit Date',
+      ...Object.values(paymentAnalysis).flatMap((analysis: any) => 
+        analysis.details.map((detail: any) => 
+          `"${analysis.status}","${detail.patientName}","${detail.doctorName}",${detail.amount},"${detail.payerType}","${detail.visitDate}"`
+        )
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'payment_status_analysis.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportBillingReport = () => {
+    if (!data || data.length === 0) return;
+    
+    const reportData = {
+      summary: {
+        totalBills: insights?.totalBills || 0,
+        totalRevenue: insights?.totalAmount || 0,
+        averageAmount: insights?.averageAmount || 0,
+        paidBills: insights?.paidBills || 0,
+        pendingBills: insights?.pendingBills || 0,
+        outstandingAmount: insights?.outstandingAmount || 0,
+        consentRate: insights?.consentRate || 0
+      },
+      departmentBreakdown: insights?.departmentRevenue || {},
+      payerDistribution: insights?.payerDistribution || {},
+      serviceRevenue: insights?.serviceRevenue || {},
+      topProcedures: Object.entries(insights?.serviceRevenue || {})
+        .sort((a, b) => (b[1] as any).revenue - (a[1] as any).revenue)
+        .slice(0, 10),
+      consentAnomalies: insights?.consentAnomalies || []
+    };
+    
+    const csvContent = [
+      'Metric,Value',
+      `Total Bills,${reportData.summary.totalBills}`,
+      `Total Revenue,₹${reportData.summary.totalRevenue.toLocaleString()}`,
+      `Average Amount,₹${reportData.summary.averageAmount.toFixed(2)}`,
+      `Paid Bills,${reportData.summary.paidBills}`,
+      `Pending Bills,${reportData.summary.pendingBills}`,
+      `Outstanding Amount,₹${reportData.summary.outstandingAmount.toLocaleString()}`,
+      `Consent Rate,${(reportData.summary.consentRate * 100).toFixed(1)}%`,
+      '',
+      'Department Revenue',
+      'Department,Revenue,Count',
+      ...Object.entries(reportData.departmentBreakdown).map(([dept, data]: [string, any]) => 
+        `"${dept}",${data.revenue},${data.count}`
+      ),
+      '',
+      'Payer Distribution',
+      'Payer Type,Count',
+      ...Object.entries(reportData.payerDistribution).map(([payer, count]) => `"${payer}",${count}`),
+      '',
+      'Top Procedures by Revenue',
+      'Procedure Code,Revenue,Count',
+      ...reportData.topProcedures.map(([code, data]: [string, any]) => 
+        `"${code}",${data.revenue},${data.count}`
+      ),
+      '',
+      'Consent Anomalies',
+      'Doctor Name,Consent Rate',
+      ...reportData.consentAnomalies.map((anomaly: any) => 
+        `"${anomaly.name}",${(anomaly.rate * 100).toFixed(1)}%`
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'billing_report.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F0F8FF] dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-gray-200 dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Logo size="md" showIndicator={false} className="flex-shrink-0" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  OP Billing Dashboard
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300 mt-1">
+                  {data.length} billing records • ₹{insights?.totalAmount?.toLocaleString() || 0} total revenue
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+              className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-white/20 dark:hover:bg-gray-800/50 transition-all duration-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back</span>
+            </Button>
+          </div>
+        </div>
+
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* KPI Alerts */}
+        <KPIAlerts data={data} industry={"opbilling"} />
+
+        {/* AI Assistant */}
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <TrendingUp className="w-6 h-6 text-purple-600 mr-2" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              AI Assistant
+            </h2>
+          </div>
+          
+          <Card className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-6">
+              <InlineChatbot 
+                context={{
+                  industry: 'healthcare',
+                  dataType: 'billing',
+                  currentDashboard: 'billing'
+                }}
+                data={data}
+                additionalData={doctorRosterData}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Specialty Performance KPIs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Total Revenue per Top Specialty</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const entries = Object.entries(insights?.specialtyAgg || {}).sort((a, b) => (b[1] as any).revenue - (a[1] as any).revenue);
+                const top = entries[0];
+                return (
+                  <div className="text-2xl font-bold text-primary">{top ? `${top[0]}: ₹${(top[1] as any).revenue.toLocaleString()}` : 'N/A'}</div>
+                );
+              })()}
+              <p className="text-xs text-gray-500">Highest grossing specialty</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Average Revenue/Visit (Top Specialty)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const entries = Object.entries(insights?.specialtyAgg || {}).map(([k, v]: any) => [k, v.revenue / Math.max(1, v.visits)]).sort((a: any, b: any) => b[1] - a[1]);
+                const top = entries[0];
+                return (
+                  <div className="text-2xl font-bold text-green-600">{top ? `${top[0]}: ₹${Number(top[1]).toFixed(2)}` : 'N/A'}</div>
+                );
+              })()}
+              <p className="text-xs text-gray-500">Best average per visit</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Patient Volume (Top Specialty)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const entries = Object.entries(insights?.specialtyAgg || {}).sort((a, b) => (b[1] as any).visits - (a[1] as any).visits);
+                const top = entries[0];
+                return (
+                  <div className="text-2xl font-bold text-purple-600">{top ? `${top[0]}: ${(top[1] as any).visits}` : 'N/A'}</div>
+                );
+              })()}
+              <p className="text-xs text-gray-500">Most visits</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* AI Leaderboard Insight (static template using computed values) */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>AI Insight</CardTitle>
+            <CardDescription>Leaderboard summary by specialty</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const entries = Object.entries(insights?.specialtyAgg || {}).sort((a, b) => (b[1] as any).revenue - (a[1] as any).revenue);
+              if (entries.length === 0) return <div className="text-sm text-gray-600">No specialty data</div>;
+              const total = entries.reduce((s, [, v]: any) => s + v.revenue, 0);
+              const top = entries[0];
+              const avgEntries = Object.entries(insights?.specialtyAgg || {}).map(([k, v]: any) => [k, v.revenue / Math.max(1, v.visits)]).sort((a: any, b: any) => b[1] - a[1]);
+              const topAvg = avgEntries[0];
+              return (
+                <div className="text-sm text-gray-800 dark:text-gray-200">
+                  This month, <span className="font-semibold">{top[0]}</span> was the top-performing department, generating {total > 0 ? `${Math.round(((top[1] as any).revenue / total) * 100)}%` : '0%'} of total revenue, while <span className="font-semibold">{topAvg ? topAvg[0] : top[0]}</span> saw the highest average revenue per patient.
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Total Revenue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">₹{insights?.totalAmount?.toLocaleString() || 0}</div>
+              <p className="text-xs text-gray-500">From {insights?.totalBills || 0} bills</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Average Bill</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">₹{insights?.averageAmount?.toFixed(2) || 0}</div>
+              <p className="text-xs text-gray-500">Per transaction</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Paid Bills</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">{insights?.paidBills || 0}</div>
+              <p className="text-xs text-gray-500">Completed payments</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Outstanding</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-red-600">₹{insights?.outstandingAmount?.toLocaleString() || 0}</div>
+              <p className="text-xs text-gray-500">Pending payments</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Technical Summary */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+            <BarChart3 className="w-5 h-5 mr-2 text-green-600" />
+            Technical Summary
+          </h2>
+          <Card>
+            <CardContent className="pt-6">
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 dark:text-gray-300">
+                <li>• Records: {data.length}</li>
+                <li>• Columns: {Object.keys(data[0] || {}).length}</li>
+                <li>• Departments: {Object.keys(insights?.departmentRevenue || {}).length}</li>
+                <li>• Payer Types: {Object.keys(insights?.payerDistribution || {}).length}</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* AI Insights */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+            <TrendingUp className="w-6 h-6 mr-2 text-purple-500" />
+            AI-Generated Insights
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+              <CardHeader>
+                <CardTitle className="text-green-800 dark:text-green-300 flex items-center">
+                  <DollarSign className="w-5 h-5 mr-2" />
+                  Revenue Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-green-700 dark:text-green-300">
+                  <li>• Total revenue: ₹{insights?.totalAmount?.toLocaleString() || 0}</li>
+                  <li>• Average bill value: ₹{insights?.averageAmount?.toFixed(2) || 0}</li>
+                  <li>• Outstanding amount: ₹{insights?.outstandingAmount?.toLocaleString() || 0}</li>
+                  <li>• Payment completion rate: {((insights?.paidBills || 0) / (insights?.totalBills || 1) * 100).toFixed(1)}%</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[#F0F8FF] dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="text-blue-800 dark:text-blue-300 flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  Department Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
+                  <li>• {Object.keys(insights?.departmentRevenue || {}).length} departments active</li>
+                  <li>• Top department: {Object.entries(insights?.departmentRevenue || {}).sort((a, b) => (b[1] as any).revenue - (a[1] as any).revenue)[0]?.[0] || 'N/A'}</li>
+                  <li>• {Object.keys(insights?.payerDistribution || {}).length} different payer types</li>
+                  <li>• {Object.keys(insights?.serviceRevenue || {}).length} service codes used</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Forecast: Monthly Revenue (SMA) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2 text-primary" />
+                Revenue Forecast
+              </CardTitle>
+              <CardDescription>
+                Simple moving-average forecast for upcoming months
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                // Build monthly series using flexible fields
+                const raw = data.map(row => ({
+                  date: getFieldValue(row, ['Bill_Date', 'Visit_Date', 'Date', 'Transaction_Date']),
+                  value: parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount']))
+                })).filter(p => p.date);
+                const byMonth: Record<string, number> = {};
+                raw.forEach(p => {
+                  const d = new Date(String(p.date));
+                  if (isNaN(d.getTime())) return;
+                  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  byMonth[key] = (byMonth[key] || 0) + p.value;
+                });
+                const series = Object.keys(byMonth).sort().map(k => ({ date: k, value: byMonth[k] }));
+                const forecast = movingAverageForecast(series, 3, 3);
+                const barData = [...series, ...forecast.map(f => ({ ...f, forecast: true }))].map(p => ({
+                  name: p.date,
+                  revenue: p.value,
+                  isForecast: (p as any).forecast || false
+                }));
+                return (
+                  <ChartContainer config={{ revenue: { label: 'Revenue', color: '#3b82f6' } }} className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barData} margin={{ top: 8, right: 24, bottom: 8, left: 16 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          {/* Department Revenue */
+          }
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2 text-green-600" />
+                Department Revenue
+              </CardTitle>
+              <CardDescription>
+                Revenue by department
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} margin={{ top: 8, right: 24, bottom: 8, left: 16 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Put Payment Status and Doctor Workload side-by-side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Payment Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <PieChart className="w-5 h-5 mr-2 text-purple-600" />
+                {pieLabel}
+              </CardTitle>
+              <CardDescription>
+                {pieLabel === 'Payment Status' ? 'Distribution of payment statuses' : 'Distribution by payer type'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Doctor Workload vs Revenue Scatter */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2 text-indigo-600" />
+                Doctor Workload vs Revenue
+              </CardTitle>
+              <CardDescription>Patients seen vs total revenue per doctor (click a point)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}} className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart margin={{ top: 8, right: 24, bottom: 16, left: 24 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      type="number"
+                      dataKey="x"
+                      name="Patients"
+                      allowDecimals={false}
+                      domain={[
+                        (dataMin: number) => Math.max(0, Math.floor(dataMin - 1)),
+                        (dataMax: number) => Math.ceil(dataMax + 1)
+                      ]}
+                      label={{ value: 'Patients', position: 'insideBottom', offset: -2 }}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="y"
+                      name="Revenue"
+                      domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin * 0.9)), (dataMax: number) => Math.ceil(dataMax * 1.05)]}
+                      tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`}
+                      label={{ value: 'Revenue', angle: -90, position: 'insideLeft' }}
+                    />
+                    <ZAxis type="number" dataKey="z" range={[80, 240]} />
+                    <ChartTooltip
+                      content={<ChartTooltipContent />}
+                      formatter={(value: any, name: any, props: any) => {
+                        if (name === 'y') return [`₹${Number(value).toLocaleString()}`, 'Revenue'];
+                        if (name === 'x') return [String(value), 'Patients'];
+                        return [String(value), name];
+                      }}
+                    />
+                    <Scatter
+                      data={insights?.workloadScatter || []}
+                      fill="#6366f1"
+                      shape="circle"
+                      onClick={(params: any) => setSelectedDoctor(params?.payload)}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+              {selectedDoctor && (
+                <div className="mt-4 text-sm text-gray-800 dark:text-gray-200">
+                  <div className="font-semibold">{selectedDoctor?.doctorName}</div>
+                  <div>Patients: {Math.round(Number(selectedDoctor?.x || 0))}, Revenue: ₹{Number(selectedDoctor?.y || 0).toLocaleString()}</div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Payer-Procedure Profitability Matrix */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Payer-Procedure Profitability</CardTitle>
+            <CardDescription>Total amount by Procedure_Code and Payer_Type</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const matrix = insights?.matrixAgg || {};
+              const procs = Object.keys(matrix);
+              const payers = Array.from(new Set(procs.flatMap(p => Object.keys(matrix[p]))));
+              if (procs.length === 0) return <div className="text-sm text-gray-600">No data</div>;
+              const max = Math.max(1, ...procs.flatMap(p => payers.map(py => matrix[p][py] || 0)));
+              return (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="p-2 text-left">Procedure</th>
+                        {payers.map(py => (<th key={py} className="p-2 text-left">{py}</th>))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {procs.map(proc => (
+                        <tr key={proc}>
+                          <td className="p-2 font-medium">{proc}</td>
+                          {payers.map(py => {
+                            const val = matrix[proc][py] || 0;
+                            const intensity = Math.round((val / max) * 255);
+                            const bg = `rgba(34,197,94,${Math.max(0.1, val / max)})`;
+                            return (
+                              <td 
+                                key={py} 
+                                className={`p-2 ${intensity > 128 ? 'text-white' : 'text-black'}`}
+                                // eslint-disable-next-line react/no-inline-styles
+                                style={{ 
+                                  backgroundColor: bg
+                                }}
+                              >
+                                ₹{val.toLocaleString()}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Age-Service section in two columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Age-Service Correlation (stacked) */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Age vs Procedure Distribution</CardTitle>
+              <CardDescription>Stacked counts by age bracket and procedure</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const agg: Record<string, Record<string, number>> = insights?.ageServiceAgg || {};
+                const ageBuckets = Object.keys(agg);
+                if (ageBuckets.length === 0) return <div className="text-sm text-gray-600">No data</div>;
+                const procs = Array.from(new Set(ageBuckets.flatMap(b => Object.keys(agg[b]))));
+                const stacked = ageBuckets.map(b => ({ name: b, ...procs.reduce((o, p) => ({ ...o, [p]: agg[b][p] || 0 }), {}) }));
+                return (
+                  <ChartContainer config={{}} className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stacked} margin={{ top: 8, right: 24, bottom: 8, left: 16 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        {procs.map((p, i) => (
+                          <Bar key={p} dataKey={p} stackId="a" fill={["#60a5fa","#34d399","#f59e0b","#f87171","#a78bfa","#10b981"][i % 6]} />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          {/* Top Procedures by Revenue */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2 text-orange-600" />
+                Top Procedures by Revenue
+              </CardTitle>
+              <CardDescription>Highest grossing procedure codes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const sr: Record<string, { count: number; revenue: number }> = insights?.serviceRevenue || {};
+                const rows = Object.entries(sr)
+                  .map(([code, v]) => ({ code, revenue: v.revenue }))
+                  .sort((a, b) => b.revenue - a.revenue)
+                  .slice(0, 5);
+                if (rows.length === 0) return <div className="text-sm text-gray-600">No data</div>;
+                return (
+                  <ChartContainer config={{ revenue: { label: 'Revenue', color: '#f59e0b' } }} className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={rows} layout="vertical" margin={{ left: 32, right: 24, top: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" tickFormatter={(v: number) => `₹${(v/1000).toFixed(0)}k`} />
+                        <YAxis type="category" dataKey="code" width={80} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="revenue" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Consent KPI and Alerts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Consent Signed Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{((insights?.consentRate || 0) * 100).toFixed(1)}%</div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Percentage of visits with Consent_Flag = 'Y'</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Consent Anomalies</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                {(insights?.consentAnomalies || []).map((d: any) => (
+                  <li key={d.id}>• {d.name}: {(d.rate * 100).toFixed(1)}%</li>
+                ))}
+                {(!insights?.consentAnomalies || insights?.consentAnomalies.length === 0) && (
+                  <li>No anomalies detected</li>
+                )}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Billing Details Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Receipt className="w-5 h-5 mr-2 text-gray-600" />
+              Billing Details
+            </CardTitle>
+            <CardDescription>
+              Recent billing transactions and payment status
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-[#F0F8FF] dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Visit ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Patient</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Age</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Visit Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Doctor</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Procedure</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payer Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Consent</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                  {data.slice(0, 10).map((row, index) => (
+                    <tr key={index} className="hover:bg-[#F0F8FF] dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        {getFieldValue(row, ['Visit_ID', 'Bill_ID', 'BillId', 'BillID', 'ID', 'id'], '—')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{getFieldValue(row, ['Patient_Name', 'patient_name', 'Name'], 'Unknown')}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-300">{getFieldValue(row, ['Patient_ID', 'patient_id', 'PatientId'], '')}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {getFieldValue(row, ['Age', 'age', 'Patient_Age', 'patient_age'], 'N/A')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {getFieldValue(row, ['Visit_Date', 'visit_date', 'Date', 'date', 'Bill_Date', 'bill_date'], 'N/A')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{getFieldValue(row, ['Doctor_ID', 'doctor_id', 'DoctorId', 'ID', 'id'], 'Unknown')}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-300">{getFieldValue(row, ['Doctor_Name', 'doctor_name', 'DoctorName', 'Name'], '')}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {getFieldValue(row, ['Procedure_Code', 'Service_Code', 'Procedure', 'Proc_Code'], '')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant="outline">
+                          {getFieldValue(row, ['Payer_Type', 'Payer', 'PayerType'], 'Unknown')}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        ₹{parseAmount(getFieldValue(row, ['Amount', 'Total_Amount', 'TotalAmount', 'Amount_Billed', 'Bill_Amount', 'Gross_Amount'])).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={getFieldValue(row, ['Consent_Flag', 'consent_flag', 'Consent', 'consent']) === 'Y' ? 'default' : 'secondary'}>
+                          {getFieldValue(row, ['Consent_Flag', 'consent_flag', 'Consent', 'consent'], 'N')}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {data.length > 10 && (
+                <div className="px-6 py-3 bg-[#F0F8FF] dark:bg-gray-800 text-center text-sm text-gray-500 dark:text-gray-300">
+                  Showing 10 of {data.length} records
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Export Options */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 flex items-center">
+            <Download className="w-6 h-6 mr-3 text-blue-500" />
+            Export Reports & Data
+          </h2>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            {/* Billing Data Card */}
+            <Card className="group hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50/50 to-white dark:from-blue-900/20 dark:to-gray-800">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center text-lg">
+                  <div className="w-10 h-10 bg-[#F0F8FF] dark:bg-blue-900/50 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/50 transition-colors duration-300">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-gray-900 dark:text-white">Billing Data</span>
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Download complete billing transaction data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button 
+                  onClick={exportBillingData} 
+                  className="w-full text-white shadow-lg hover:shadow-primary/25 transition-all duration-300 group-hover:scale-105 flex items-center justify-center"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download 
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Revenue Analysis Card */}
+            <Card className="group hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-green-500 bg-gradient-to-br from-green-50/50 to-white dark:from-green-900/20 dark:to-gray-800">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center text-lg">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center mr-3 group-hover:bg-green-200 dark:group-hover:bg-green-800/50 transition-colors duration-300">
+                    <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="text-gray-900 dark:text-white">Revenue Analysis</span>
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Download detailed revenue analysis by doctor and specialty
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button 
+                  onClick={exportRevenueAnalysis} 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/25 transition-all duration-300 group-hover:scale-105 flex items-center justify-center"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download 
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Payment Status Card */}
+            <Card className="group hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50/50 to-white dark:from-orange-900/20 dark:to-gray-800">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center text-lg">
+                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center mr-3 group-hover:bg-orange-200 dark:group-hover:bg-orange-800/50 transition-colors duration-300">
+                    <Receipt className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <span className="text-gray-900 dark:text-white">Payment Status</span>
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Download payment status analysis and outstanding amounts
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button 
+                  onClick={exportPaymentStatus} 
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-lg hover:shadow-orange-500/25 transition-all duration-300 group-hover:scale-105 flex items-center justify-center"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download 
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Billing Report Card */}
+            <Card className="group hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50/50 to-white dark:from-purple-900/20 dark:to-gray-800">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center text-lg">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center mr-3 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/50 transition-colors duration-300">
+                    <BarChart3Icon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-gray-900 dark:text-white">Billing Report</span>
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Download comprehensive billing summary and analytics
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button 
+                  onClick={exportBillingReport} 
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 group-hover:scale-105 flex items-center justify-center"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download 
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center space-x-4 mt-12">
+          <Button
+            onClick={onGoHome}
+            className="px-10 py-4 text-white font-bold text-lg rounded-2xl shadow-xl bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+          >
+            <span className="flex items-center justify-center">
+              <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Create New Dashboard
+            </span>
+          </Button>
+          <Button
+            onClick={exportDashboard}
+            variant="outline"
+            className="px-10 py-4 font-bold text-lg rounded-2xl shadow-xl border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-300 hover:scale-105"
+          >
+            <span className="flex items-center justify-center">
+              <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export Dashboard
+            </span>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
