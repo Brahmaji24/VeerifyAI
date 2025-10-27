@@ -49,6 +49,21 @@ export function ThemeProvider({
     root.classList.add(theme);
   }, [theme]);
 
+  // Listen for changes from the custom theme context
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'theme' && e.newValue) {
+        const newTheme = e.newValue as Theme;
+        if (newTheme === 'light' || newTheme === 'dark') {
+          setTheme(newTheme);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const value = {
     theme,
     setTheme: (theme: Theme) => {

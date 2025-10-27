@@ -37,6 +37,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
+    // Also sync with Shadcn theme provider
+    localStorage.setItem('bi-agentic-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

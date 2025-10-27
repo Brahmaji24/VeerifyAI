@@ -20,6 +20,7 @@ import {
   Moon
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Logo } from '@/components/Logo';
 import { ModeToggle } from '@/components/ui/mode-toggle';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 const Demo = () => {
   const navigate = useNavigate();
   const { user, isLoggedIn, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   
   // User dropdown state
@@ -90,12 +92,7 @@ const Demo = () => {
             <div className="flex items-center space-x-4">
               {/* Theme Toggle */}
               <button 
-                onClick={() => {
-                  const html = document.documentElement;
-                  const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
-                  html.classList.toggle('dark');
-                  localStorage.setItem('theme', newTheme);
-                }}
+                onClick={toggleTheme}
                 className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300"
                 aria-label="Toggle theme"
                 title="Toggle theme"

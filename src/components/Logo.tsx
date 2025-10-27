@@ -40,7 +40,7 @@ export const Logo: React.FC<LogoProps> = ({
           <img
             src={logoSrc}
             alt="Logo"
-            className={`${currentSizeClasses[size]} object-contain`}
+            className={`${currentSizeClasses[size]} object-contain select-none pointer-events-none`}
             onError={(e) => {
               console.log('Logo image failed to load:', logoSrc);
               e.currentTarget.style.display = 'none';

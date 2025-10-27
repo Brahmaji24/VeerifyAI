@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface FileUploadProps {
   onFileUpload: (file: File) => void;
@@ -10,6 +11,7 @@ interface FileUploadProps {
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, selectedIndustry, onBack }) => {
+  const { theme } = useTheme();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -58,9 +60,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, selectedIn
         {...getRootProps()}
         className={`
           relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300
-          bg-[#1A1D29] border-[#6C757D] hover:border-[#8B9DC3]
+          ${theme === 'light' 
+            ? 'bg-blue-50 border-gray-300 hover:border-blue-400' 
+            : 'bg-[#1A1D29] border-[#6C757D] hover:border-[#8B9DC3]'
+          }
           ${isDragActive 
-            ? 'border-[#8B9DC3] scale-105' 
+            ? theme === 'light' ? 'border-blue-400 scale-105' : 'border-[#8B9DC3] scale-105'
             : ''
           }
           ${uploadedFile ? 'border-green-400' : ''}
@@ -75,11 +80,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, selectedIn
                 <FileText className="w-8 h-8 text-white" />
               </div>
               <div>
-                <p className="text-xl font-semibold text-white">
+                <p className={`text-xl font-semibold ${theme === 'light' ? 'text-gray-800' : 'text-white'}`}>
                   File Uploaded Successfully!
                 </p>
-                <p className="text-sm text-[#ADB5BD]">{uploadedFile.name}</p>
-                <p className="text-xs text-[#6C757D]">
+                <p className={`text-sm ${theme === 'light' ? 'text-gray-600' : 'text-[#ADB5BD]'}`}>{uploadedFile.name}</p>
+                <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-[#6C757D]'}`}>
                   Size: {(uploadedFile.size / 1024).toFixed(1)} KB
                 </p>
               </div>
@@ -90,10 +95,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, selectedIn
                 <Upload className="w-8 h-8 text-white" />
               </div>
               <div>
-                <p className="text-xl font-semibold text-white">
+                <p className={`text-xl font-semibold ${theme === 'light' ? 'text-gray-800' : 'text-white'}`}>
                   {isDragActive ? 'Drop your CSV file here' : 'Upload Your CSV File'}
                 </p>
-                <p className="text-sm text-[#ADB5BD]">
+                <p className={`text-sm ${theme === 'light' ? 'text-gray-600' : 'text-[#ADB5BD]'}`}>
                   Drag and drop your CSV file here, or click to browse
                 </p>
               </div>

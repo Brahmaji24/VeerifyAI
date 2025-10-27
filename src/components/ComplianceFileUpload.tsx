@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { generateInsights, Insight } from '@/utils/insightsGenerator';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ComplianceFileUploadProps {
   onFilesUpload: (opBillingFile: File, doctorRosterFile: File) => void;
@@ -12,6 +13,7 @@ interface ComplianceFileUploadProps {
 }
 
 export const ComplianceFileUpload: React.FC<ComplianceFileUploadProps> = ({ onFilesUpload, onBack }) => {
+  const { theme } = useTheme();
   const [opBillingFile, setOpBillingFile] = useState<File | null>(null);
   const [doctorRosterFile, setDoctorRosterFile] = useState<File | null>(null);
   const [currentUpload, setCurrentUpload] = useState<'billing' | 'roster' | null>(null);
@@ -174,9 +176,12 @@ export const ComplianceFileUpload: React.FC<ComplianceFileUploadProps> = ({ onFi
               {...getBillingRootProps()}
               className={`
                 relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300
-                bg-[#1A1D29] border-[#6C757D] hover:border-[#8B9DC3]
+                ${theme === 'light' 
+                  ? 'bg-blue-50 border-gray-300 hover:border-blue-400' 
+                  : 'bg-[#1A1D29] border-[#6C757D] hover:border-[#8B9DC3]'
+                }
                 ${isBillingDragActive 
-                  ? 'border-[#8B9DC3] scale-105' 
+                  ? theme === 'light' ? 'border-blue-400 scale-105' : 'border-[#8B9DC3] scale-105'
                   : ''
                 }
                 ${opBillingFile ? 'border-green-400' : ''}
@@ -191,10 +196,10 @@ export const ComplianceFileUpload: React.FC<ComplianceFileUploadProps> = ({ onFi
                       <FileText className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">
+                      <p className={`text-sm font-semibold ${theme === 'light' ? 'text-gray-800' : 'text-white'}`}>
                         {opBillingFile.name}
                       </p>
-                      <p className="text-xs text-[#ADB5BD]">
+                      <p className={`text-xs ${theme === 'light' ? 'text-gray-600' : 'text-[#ADB5BD]'}`}>
                         {(opBillingFile.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
@@ -205,10 +210,10 @@ export const ComplianceFileUpload: React.FC<ComplianceFileUploadProps> = ({ onFi
                       <Upload className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">
+                      <p className={`text-sm font-semibold ${theme === 'light' ? 'text-gray-800' : 'text-white'}`}>
                         {isBillingDragActive ? 'Drop billing CSV here' : 'Upload Billing CSV'}
                       </p>
-                      <p className="text-xs text-[#ADB5BD]">
+                      <p className={`text-xs ${theme === 'light' ? 'text-gray-600' : 'text-[#ADB5BD]'}`}>
                         Drag and drop or click to browse
                       </p>
                     </div>
@@ -247,9 +252,12 @@ export const ComplianceFileUpload: React.FC<ComplianceFileUploadProps> = ({ onFi
               {...getRosterRootProps()}
               className={`
                 relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300
-                bg-[#1A1D29] border-[#6C757D] hover:border-[#8B9DC3]
+                ${theme === 'light' 
+                  ? 'bg-blue-50 border-gray-300 hover:border-blue-400' 
+                  : 'bg-[#1A1D29] border-[#6C757D] hover:border-[#8B9DC3]'
+                }
                 ${isRosterDragActive 
-                  ? 'border-[#8B9DC3] scale-105' 
+                  ? theme === 'light' ? 'border-blue-400 scale-105' : 'border-[#8B9DC3] scale-105'
                   : ''
                 }
                 ${doctorRosterFile ? 'border-green-400' : ''}
@@ -264,10 +272,10 @@ export const ComplianceFileUpload: React.FC<ComplianceFileUploadProps> = ({ onFi
                       <FileText className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">
+                      <p className={`text-sm font-semibold ${theme === 'light' ? 'text-gray-800' : 'text-white'}`}>
                         {doctorRosterFile.name}
                       </p>
-                      <p className="text-xs text-[#ADB5BD]">
+                      <p className={`text-xs ${theme === 'light' ? 'text-gray-600' : 'text-[#ADB5BD]'}`}>
                         {(doctorRosterFile.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
@@ -278,10 +286,10 @@ export const ComplianceFileUpload: React.FC<ComplianceFileUploadProps> = ({ onFi
                       <Upload className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">
+                      <p className={`text-sm font-semibold ${theme === 'light' ? 'text-gray-800' : 'text-white'}`}>
                         {isRosterDragActive ? 'Drop roster CSV here' : 'Upload Roster CSV'}
                       </p>
-                      <p className="text-xs text-[#ADB5BD]">
+                      <p className={`text-xs ${theme === 'light' ? 'text-gray-600' : 'text-[#ADB5BD]'}`}>
                         Drag and drop or click to browse
                       </p>
                     </div>
