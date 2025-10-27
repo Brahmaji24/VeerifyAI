@@ -18,12 +18,16 @@ const allowedOrigins = [
   'http://localhost:8080',
   'https://veerify-ai-frontend.vercel.app',
   'https://veerify-ai-ashy.vercel.app',
-  
+  'https://veerify-ai-three.vercel.app',
+  'https://*.vercel.app'
 ];
 
 // Add dynamic origin from environment variable
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  const frontendUrl = process.env.FRONTEND_URL.replace(/\/$/, ''); // Remove trailing slash
+  if (!allowedOrigins.includes(frontendUrl)) {
+    allowedOrigins.push(frontendUrl);
+  }
 }
 
 app.use(cors({ 
@@ -43,6 +47,7 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
+      console.log(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
