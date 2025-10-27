@@ -18,6 +18,8 @@ const allowedOrigins = [
   'http://localhost:8080',
   'https://veerify-ai-frontend.vercel.app',
   'https://veerify-ai-ashy.vercel.app',
+  'https://api.veerifyai.com',
+  
   'https://veerify-ai-three.vercel.app',
   'https://*.vercel.app'
 ];
