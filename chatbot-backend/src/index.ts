@@ -39,7 +39,9 @@ const allowedOrigins: string[] = [
   'https://*.vercel.app',
   'https://csv-sensei-dash.vercel.app',
   'https://veerify-ai-three.vercel.app',
-  'https://chat.veerifyai.com'
+  'https://chat.veerifyai.com',
+  'https://veerifyai.com',
+  'https://www.veerifyai.com'
 ];
 
 // Add dynamic origin from environment variable

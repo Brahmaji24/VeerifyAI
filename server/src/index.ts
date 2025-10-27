@@ -19,7 +19,8 @@ const allowedOrigins = [
   'https://veerify-ai-frontend.vercel.app',
   'https://veerify-ai-ashy.vercel.app',
   'https://api.veerifyai.com',
-  
+  'https://veerifyai.com',
+  'https://www.veerifyai.com',
   'https://veerify-ai-three.vercel.app',
   'https://*.vercel.app'
 ];
