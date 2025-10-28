@@ -56,7 +56,7 @@ const Demo = () => {
     try {
       await logout();
       setShowUserDropdown(false);
-      navigate('/login');
+      navigate('/');
       toast({
         title: "Logged out successfully",
         description: "You have been logged out of your account.",
