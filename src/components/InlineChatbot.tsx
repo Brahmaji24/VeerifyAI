@@ -182,7 +182,7 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
           <div className="flex-shrink-0">
             <div className={cn(
               'w-8 h-8 rounded-full flex items-center justify-center',
-              isError ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+              isError ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
             )}>
               {isError ? <AlertCircle className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
             </div>
@@ -194,13 +194,13 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
           isUser 
             ? 'bg-blue-600 text-white' 
             : isError 
-              ? 'bg-red-50 text-red-800 border border-red-200'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
+              : 'bg-gray-100 dark:bg-muted text-gray-800 dark:text-foreground'
         )}>
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
           <div className={cn(
             'text-xs mt-1 opacity-70',
-            isUser ? 'text-blue-100' : 'text-gray-500'
+            isUser ? 'text-blue-100' : 'text-gray-500 dark:text-muted-foreground'
           )}>
             {formatTime(message.timestamp)}
             {message.metadata?.processingTime && (
@@ -213,7 +213,7 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
 
         {isUser && (
           <div className="flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-muted text-gray-600 dark:text-muted-foreground flex items-center justify-center">
               <User className="w-4 h-4" />
             </div>
           </div>
@@ -258,7 +258,7 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
               onKeyPress={handleKeyPress}
               placeholder={getPlaceholder()}
               disabled={isLoading || !data || data.length === 0}
-              className="pl-10 pr-4 py-3 text-base rounded-xl border-2 focus:border-blue-500"
+              className="pl-10 pr-4 py-3 text-base rounded-xl border-2 focus:border-blue-500 bg-background text-foreground border-input"
             />
           </div>
           <Button
@@ -279,7 +279,7 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
 
         {/* Error Message */}
         {error && (
-          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+          <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-300 text-sm">
             {error}
           </div>
         )}
@@ -288,7 +288,7 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {data && data.length > 0 ? (
-              <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+              <Badge variant="default" className="text-xs bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300">
                 📊 {data.length} records loaded
               </Badge>
             ) : (
@@ -322,7 +322,7 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={clearConversation}
-                className="h-8 px-2 text-xs"
+                className="h-8 px-2 text-xs text-foreground hover:bg-muted"
               >
                 Clear
               </Button>
@@ -335,10 +335,10 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
       {isExpanded && messages.length > 0 && (
         <Card className="mt-4 border-2">
           <CardContent className="p-0">
-            <div className="p-4 border-b bg-gray-50">
+            <div className="p-4 border-b bg-gray-50 dark:bg-muted">
               <div className="flex items-center gap-2">
-                <Bot className="w-5 h-5 text-blue-600" />
-                <h3 className="font-medium text-gray-900">AI Assistant</h3>
+                <Bot className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="font-medium text-gray-900 dark:text-foreground">AI Assistant</h3>
                 <Badge variant="secondary" className="text-xs">
                   {context?.currentDashboard || 'General'} Dashboard
                 </Badge>
@@ -350,13 +350,13 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
                 {messages.map(renderMessage)}
                 {isLoading && (
                   <div className="flex gap-3 p-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
                       <Bot className="w-4 h-4" />
                     </div>
-                    <div className="bg-gray-100 rounded-lg px-4 py-2">
+                    <div className="bg-gray-100 dark:bg-muted rounded-lg px-4 py-2">
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm text-gray-600">Thinking...</span>
+                        <span className="text-sm text-gray-600 dark:text-foreground">Thinking...</span>
                       </div>
                     </div>
                   </div>

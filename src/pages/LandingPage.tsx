@@ -494,7 +494,7 @@ const LandingPage = () => {
                 Healthcare organizations face mounting pressure to maintain compliance while delivering exceptional patient care. 
                 The current approach of <span className="font-semibold text-red-600 relative group cursor-pointer">
                   manual effort, missed renewals, and overlooked risks
-                  <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-600 group-hover:w-full transition-all duration-500"></div>
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-600 group-hover:w-full transition-all duration-500"></span>
                 </span> 
                 creates vulnerabilities that can impact patient safety and organizational reputation.
               </p>
