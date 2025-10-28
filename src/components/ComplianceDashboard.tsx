@@ -840,16 +840,16 @@ export const ComplianceDashboard: React.FC<ComplianceDashboardProps> = ({
           </div>
         )}
 
-        {/* Business Performance Overview */}
+        {/* Compliance Metrics Overview */}
         <div className="mb-8">
           <Card className="bg-transparent border border-gray-200 dark:border-gray-700">
             <CardHeader>
               <CardTitle className="flex items-center text-primary dark:text-primary">
                 <TrendingUp className="w-6 h-6 mr-2" />
-                Business Performance Overview
+                Compliance Metrics Overview
               </CardTitle>
               <CardDescription>
-                Key operational metrics and revenue insights
+                Key data quality metrics and revenue insights
               </CardDescription>
             </CardHeader>
             <CardContent>

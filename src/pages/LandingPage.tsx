@@ -495,8 +495,7 @@ const LandingPage = () => {
                 The current approach of <span className="font-semibold text-red-600 relative group cursor-pointer">
                   manual effort, missed renewals, and overlooked risks
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-600 group-hover:w-full transition-all duration-500"></span>
-                </span> 
-                creates vulnerabilities that can impact patient safety and organizational reputation.
+                </span> creates vulnerabilities that can impact patient safety and organizational reputation.
               </p>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3 group hover:translate-x-2 transition-transform duration-300">
@@ -1106,26 +1105,93 @@ const LandingPage = () => {
                 Building the AI Layer for Compliance and Safety in Healthcare
               </p>
               <div className="flex space-x-4">
-                <Mail className="w-5 h-5 text-gray-400" />
-                <Phone className="w-5 h-5 text-gray-400" />
-                <MapPin className="w-5 h-5 text-gray-400" />
+                <button 
+                  onClick={() => window.open('mailto:contact@veerifyai.com?subject=Inquiry from Website', '_blank')}
+                  className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  title="Send us an email"
+                >
+                  <Mail className="w-5 h-5 text-gray-400 hover:text-white" />
+                </button>
+                <button 
+                  onClick={() => window.open('tel:+1-555-123-4567', '_self')}
+                  className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  title="Call us"
+                >
+                  <Phone className="w-5 h-5 text-gray-400 hover:text-white" />
+                </button>
+                <button 
+                  onClick={() => window.open('https://maps.google.com/?q=New+York+NY', '_blank')}
+                  className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  title="View our location"
+                >
+                  <MapPin className="w-5 h-5 text-gray-400 hover:text-white" />
+                </button>
               </div>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">Product</h4>
+              <h4 className="text-lg font-semibold mb-4">Navigation</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>Features</li>
-                <li>Demo</li>
-                <li>Security</li>
+                <li>
+                  <button 
+                    onClick={() => handleNavClick('home')}
+                    className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  >
+                    Home
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => handleNavClick('solution')}
+                    className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  >
+                    Solution
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => handleNavClick('benefits')}
+                    className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  >
+                    Benefits
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="text-lg font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>About</li>
-                <li>Careers</li>
-                <li>Contact</li>
-                <li>Privacy</li>
+                <li>
+                  <button 
+                    onClick={() => handleNavClick('audience')}
+                    className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  >
+                    About
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => handleNavClick('contact')}
+                    className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  >
+                    Contact
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={handleSignIn}
+                    className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  >
+                    Sign In
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={handleGetStarted}
+                    className="hover:text-white transition-colors duration-300 cursor-pointer"
+                  >
+                    Get Started
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
