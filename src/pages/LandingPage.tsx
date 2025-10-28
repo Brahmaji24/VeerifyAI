@@ -220,8 +220,6 @@ const LandingPage = () => {
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
-                style={{ cursor: 'pointer' }}
-                onMouseDown={(e) => e.preventDefault()}
               >
                 Home
                 {activeSection === 'home' && (
@@ -235,8 +233,6 @@ const LandingPage = () => {
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
-                style={{ cursor: 'pointer' }}
-                onMouseDown={(e) => e.preventDefault()}
               >
                 Solution
                 {activeSection === 'solution' && (
@@ -250,8 +246,6 @@ const LandingPage = () => {
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
-                style={{ cursor: 'pointer' }}
-                onMouseDown={(e) => e.preventDefault()}
               >
                 Benefits
                 {activeSection === 'benefits' && (
@@ -265,8 +259,6 @@ const LandingPage = () => {
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
-                style={{ cursor: 'pointer' }}
-                onMouseDown={(e) => e.preventDefault()}
               >
                 About
                 {activeSection === 'audience' && (
@@ -280,8 +272,6 @@ const LandingPage = () => {
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
-                style={{ cursor: 'pointer' }}
-                onMouseDown={(e) => e.preventDefault()}
               >
                 Contact
                 {activeSection === 'contact' && (
