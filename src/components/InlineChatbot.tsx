@@ -259,6 +259,7 @@ export const InlineChatbot: React.FC<InlineChatbotProps> = ({
               placeholder={getPlaceholder()}
               disabled={isLoading || !data || data.length === 0}
               className="pl-10 pr-4 py-3 text-base rounded-xl border-2 focus:border-blue-500 bg-background text-foreground border-input"
+              style={{ cursor: 'text' }}
             />
           </div>
           <Button
