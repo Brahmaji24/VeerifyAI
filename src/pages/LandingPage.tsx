@@ -215,7 +215,7 @@ const LandingPage = () => {
             <div className="hidden md:flex items-center space-x-8">
               <button 
                 onClick={() => handleNavClick('home')}
-                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 ${
+                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 cursor-pointer ${
                   activeSection === 'home' 
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
@@ -228,7 +228,7 @@ const LandingPage = () => {
               </button>
               <button 
                 onClick={() => handleNavClick('solution')}
-                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 ${
+                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 cursor-pointer ${
                   activeSection === 'solution' 
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
@@ -241,7 +241,7 @@ const LandingPage = () => {
               </button>
               <button 
                 onClick={() => handleNavClick('benefits')}
-                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 ${
+                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 cursor-pointer ${
                   activeSection === 'benefits' 
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
@@ -254,7 +254,7 @@ const LandingPage = () => {
               </button>
               <button 
                 onClick={() => handleNavClick('audience')}
-                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 ${
+                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 cursor-pointer ${
                   activeSection === 'audience' 
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
@@ -267,7 +267,7 @@ const LandingPage = () => {
               </button>
               <button 
                 onClick={() => handleNavClick('contact')}
-                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 ${
+                className={`relative text-sm font-semibold transition-colors duration-300 uppercase tracking-wide pb-1 cursor-pointer ${
                   activeSection === 'contact' 
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'

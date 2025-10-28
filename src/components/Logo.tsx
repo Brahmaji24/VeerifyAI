@@ -35,6 +35,7 @@ export const Logo: React.FC<LogoProps> = ({
       <div 
         className={`relative ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity duration-200' : ''}`}
         onClick={onClick}
+        style={{ cursor: onClick ? 'pointer' : 'default' }}
       >
         <div>
           <img

@@ -222,6 +222,24 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Prevent text cursor on buttons and interactive elements */
+  button, 
+  [role="button"], 
+  [tabindex]:not([tabindex="-1"]),
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    cursor: pointer !important;
+  }
+
+  /* Ensure no text cursor appears on focus for buttons */
+  button:focus,
+  [role="button"]:focus,
+  [tabindex]:not([tabindex="-1"]):focus {
+    outline: none;
+    cursor: pointer !important;
+  }
 }
 
 /* Custom animations for landing page */
