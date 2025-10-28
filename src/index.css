@@ -240,6 +240,51 @@
     outline: none;
     cursor: pointer !important;
   }
+
+  /* Remove text cursor from all non-input elements */
+  * {
+    cursor: default !important;
+  }
+
+  /* Only allow text cursor in actual input fields */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="url"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="textarea"],
+  textarea,
+  [contenteditable="true"],
+  [contenteditable=""] {
+    cursor: text !important;
+  }
+
+  /* Ensure buttons and clickable elements show pointer cursor */
+  button,
+  [role="button"],
+  [onclick],
+  [onClick],
+  .cursor-pointer,
+  a,
+  .clickable,
+  .logo,
+  .nav-button,
+  .nav-link,
+  [data-nav],
+  img[onclick],
+  img[onClick] {
+    cursor: pointer !important;
+  }
+
+  /* Prevent text selection on non-input elements */
+  *:not(input):not(textarea):not([contenteditable="true"]):not([contenteditable=""]) {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+  }
 }
 
 /* Custom animations for landing page */
