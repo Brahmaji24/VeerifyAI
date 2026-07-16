@@ -126,7 +126,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F8FF] dark:bg-gray-900 flex relative overflow-hidden">
+    <div className="min-h-screen bg-[#F2FBF4] dark:bg-gray-900 flex relative overflow-hidden">
       {/* Background Bubble Animation - Full Page Coverage */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Large floating bubbles */}
@@ -252,13 +252,18 @@ const Signup = () => {
             {/* Header */}
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
                   <Shield className="w-8 h-8 text-white" />
                 </div>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Create Account</h2>
-                <p className="text-gray-600 dark:text-gray-300 text-sm">Sign up to get started with your dashboard</p>
+                <h2 className="text-2xl font-bold text-green-700 dark:text-green-400">
+  Create Account
+</h2>
+
+<p className="text-gray-600 dark:text-gray-300 text-sm">
+  Sign up to get started with your dashboard
+</p>
               </div>
             </div>
             
@@ -279,7 +284,7 @@ const Signup = () => {
                       placeholder="John"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50"
+                      className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-green-500/50"
                       required
                     />
                   </div>
@@ -298,7 +303,7 @@ const Signup = () => {
                       placeholder="Doe"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50"
+                      className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-green-500/50"
                       required
                     />
                   </div>
@@ -319,7 +324,7 @@ const Signup = () => {
                     placeholder="Your email address"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50"
+                    className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-green-500/50"
                     required
                   />
                 </div>
@@ -339,7 +344,7 @@ const Signup = () => {
                     placeholder="Your Company"
                     value={formData.company}
                     onChange={handleInputChange}
-                    className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50"
+                    className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-green-500/50"
                     required
                   />
                 </div>
@@ -359,7 +364,7 @@ const Signup = () => {
                     placeholder="Create a strong password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pl-10 pr-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50"
+                    className="pl-10 pr-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-green-500/50"
                     required
                   />
                   <button
@@ -386,7 +391,7 @@ const Signup = () => {
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50"
+                    className="pl-10 h-12 bg-white/90 dark:bg-white/10 border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-green-500/50"
                     required
                   />
                 </div>
@@ -403,22 +408,22 @@ const Signup = () => {
 
               {/* Submit Button */}
               <Button
-                type="submit"
-                className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.02] group"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Creating Account...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <span>Create Account</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                )}
-              </Button>
+  type="submit"
+  className="w-full h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.02] group"
+  disabled={isLoading}
+>
+  {isLoading ? (
+    <div className="flex items-center space-x-2">
+      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      <span>Creating Account...</span>
+    </div>
+  ) : (
+    <div className="flex items-center space-x-2">
+      <span>Create Account</span>
+      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+    </div>
+  )}
+</Button>
             </form>
 
             {/* Login Link */}

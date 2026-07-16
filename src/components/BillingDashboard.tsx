@@ -144,7 +144,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ data, onBack
 
     // Outstanding analysis
     const outstandingAmount = data
-      .filter(row => {
+      .filter(row => {         
         const status = getFieldValue(row, ['Payment_Status', 'PaymentStatus', 'Status', 'Payment_Status_Desc'], '').toString();
         return status === 'Pending' || status === 'Outstanding' || status === 'Unpaid';
       })

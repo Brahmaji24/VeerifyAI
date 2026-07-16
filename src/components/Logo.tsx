@@ -20,11 +20,11 @@ export const Logo: React.FC<LogoProps> = ({
   const { theme } = useTheme();
   
   const sizeClasses = {
-    sm: 'h-28 w-28',
-    md: 'h-32 w-32',
-    lg: 'h-36 w-36',
-    xl: 'h-44 w-44'
-  };
+  sm: 'h-10 w-10',
+  md: 'h-20 w-20',
+  lg: 'h-24 w-24',
+  xl: 'h-32 w-32'
+};
 
   // Use light logo for light theme, dark logo for dark theme
   const logoSrc = theme === 'light' ? ltlogo2 : '/logo.png';
