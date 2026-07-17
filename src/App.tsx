@@ -11,7 +11,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Demo from "./pages/Demo";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import RequestDemo from "./pages/RequestDemo";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -36,7 +36,8 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      <Route path="/request-demo" element={<RequestDemo />} />
+      <Route path="/signup" element={<RequestDemo />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route 
         path="/demo" 

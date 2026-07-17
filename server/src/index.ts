@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import dns from 'node:dns';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -8,6 +9,10 @@ import { authRoutes } from './routes/auth';
 import { adminRoutes } from './routes/admin';
 import { featureToggleRoutes } from './routes/featureToggles';
 import { publicFeatureToggleRoutes } from './routes/publicFeatureToggles';
+
+// Use public resolvers for MongoDB Atlas SRV lookups. Some local/router DNS
+// servers resolve through nslookup but refuse Node's SRV queries.
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 const app = express();
 
