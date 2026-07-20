@@ -1,8 +1,8 @@
 import "dotenv/config";
 import dns from "node:dns";
 import mongoose from "mongoose";
-import { app } from "./app";
-import { connectDatabase } from "./database";
+import { app } from "./app.js";
+import { connectDatabase } from "./database.js";
 
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 

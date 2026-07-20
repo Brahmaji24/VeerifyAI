@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import { connectDatabase } from "./database";
-import { router as api } from "./routes";
+import { connectDatabase } from "./database.js";
+import { router as api } from "./routes.js";
 
 export const app = express();
 
@@ -80,4 +80,3 @@ app.use(
   },
   api,
 );
-

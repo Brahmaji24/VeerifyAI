@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import mongoose from "mongoose";
-import { DemoRequestModel } from "./models/DemoRequest";
-import { sendDemoRequestNotification } from "./services/formspree";
+import { DemoRequestModel } from "./models/DemoRequest.js";
+import { sendDemoRequestNotification } from "./services/formspree.js";
 
 export const router = Router();
 
