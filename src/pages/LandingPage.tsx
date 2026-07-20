@@ -84,26 +84,16 @@ const LandingPage = () => {
           <a
             href="#about"
             aria-label="Veerify AI home"
-            className="flex min-w-0 items-center gap-3"
+            className="flex min-w-0 items-center"
           >
-            <span className="flex shrink-0 flex-col items-center">
+            <span className="flex w-28 shrink-0 flex-col items-center justify-center">
               <img
                 src="/logo.png"
                 alt="Veerify AI logo"
-                className="h-10 w-10 rounded-xl object-contain sm:h-12 sm:w-12"
+                className="h-[4.5rem] w-[4.5rem] object-contain sm:h-20 sm:w-20"
               />
-              <span className="mt-1 whitespace-nowrap text-center text-[7px] font-semibold leading-none tracking-tight text-emerald-700 sm:text-[8px]">
+              <span className="-mt-1 whitespace-nowrap text-center text-[9px] font-semibold leading-none tracking-[-0.02em] text-emerald-700 sm:text-[10px]">
                 Aritakula Innovations
-              </span>
-            </span>
-
-            <span className="min-w-0">
-              <span className="block text-base font-bold leading-none text-slate-900 sm:text-lg">
-                Veerify AI
-              </span>
-
-              <span className="mt-1 hidden text-xs text-slate-500 sm:block">
-                Hospital Compliance Execution
               </span>
             </span>
           </a>

@@ -5,21 +5,8 @@ declare global {
       NODE_ENV: string;
       PORT: string;
       MONGODB_URI: string;
-      JWT_SECRET: string;
-      JWT_EXPIRES_IN: string;
       FRONTEND_URL?: string;
-    }
-  }
-
-  // Extend Express Request type
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        company: string;
-        role: string;
-      };
+      FORMSPREE_FORM_ID?: string;
     }
   }
 

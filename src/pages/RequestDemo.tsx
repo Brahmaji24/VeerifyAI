@@ -1,11 +1,54 @@
-import { useForm, ValidationError } from "@formspree/react";
+import { FormEvent, useState } from "react";
 import { ArrowLeft, CheckCircle2, Mail, Phone, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const RequestDemo = () => {
-  const [state, handleSubmit] = useForm("mblzball");
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  if (state.succeeded) {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch("/api/demo-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: String(formData.get("firstName") || ""),
+          lastName: String(formData.get("lastName") || ""),
+          email: String(formData.get("email") || ""),
+          phone: String(formData.get("phone") || ""),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Unable to submit demo request");
+      }
+
+      form.reset();
+      setSubmitted(true);
+    } catch (submissionError) {
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "Unable to submit demo request",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-emerald-50 px-4 py-12">
         <section className="w-full max-w-xl rounded-3xl border border-emerald-100 bg-white p-8 text-center shadow-xl sm:p-12">
@@ -95,8 +138,6 @@ const RequestDemo = () => {
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-              <input type="hidden" name="subject" value="New Veerify AI demo request" />
-
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="firstName" className="text-sm font-semibold text-slate-700">
@@ -111,7 +152,6 @@ const RequestDemo = () => {
                     className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                     placeholder="First name"
                   />
-                  <ValidationError prefix="First name" field="firstName" errors={state.errors} />
                 </div>
 
                 <div>
@@ -127,7 +167,6 @@ const RequestDemo = () => {
                     className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                     placeholder="Last name"
                   />
-                  <ValidationError prefix="Last name" field="lastName" errors={state.errors} />
                 </div>
               </div>
 
@@ -144,7 +183,6 @@ const RequestDemo = () => {
                   className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                   placeholder="name@hospital.com"
                 />
-                <ValidationError prefix="Email" field="email" errors={state.errors} />
               </div>
 
               <div>
@@ -160,18 +198,24 @@ const RequestDemo = () => {
                   className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                   placeholder="+91 98765 43210"
                 />
-                <ValidationError prefix="Contact number" field="phone" errors={state.errors} />
               </div>
 
-              <ValidationError errors={state.errors} />
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
+                >
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"
-                disabled={state.submitting}
+                disabled={submitting}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 font-semibold text-white shadow-lg shadow-emerald-900/15 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {state.submitting ? "Sending request..." : "Submit demo request"}
-                {!state.submitting && <Send className="h-4 w-4" />}
+                {submitting ? "Sending request..." : "Submit"}
+                {!submitting && <Send className="h-4 w-4" />}
               </button>
 
               <p className="text-center text-xs leading-5 text-slate-500">
