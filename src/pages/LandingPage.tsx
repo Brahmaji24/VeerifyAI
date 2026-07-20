@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -6,25 +7,48 @@ import {
   LayoutDashboard,
   ListChecks,
   Mail,
+  Menu,
   Phone,
   SearchCheck,
   ShieldCheck,
+  X,
 } from "lucide-react";
 
-const modules = [
-  "Infection Prevention and Control",
-  "Quality, Patient Safety, and Risk Management",
-  "Biomedical Equipment Compliance",
-  "Facility Management and Safety",
-  "Human Resource and Staff Compliance",
-  "Medication and Pharmacy Compliance",
-  "Patient Rights, Consent, and Education",
-  "Clinical Care and Nursing Compliance",
-  "Internal Audits",
-  "RCA and CAPA",
-  "Document and Evidence Management",
-  "Hospital Clause Mapping",
-  "Dashboards and Audit Readiness",
+const moduleGroups = [
+  {
+    title: "Clinical quality and safety",
+    description: "Coordinate patient-facing compliance across clinical teams.",
+    modules: [
+      "Infection Prevention and Control",
+      "Quality, Patient Safety, and Risk Management",
+      "Medication and Pharmacy Compliance",
+      "Patient Rights, Consent, and Education",
+      "Clinical Care and Nursing Compliance",
+    ],
+  },
+  {
+    title: "Facilities and workforce",
+    description: "Keep operational, equipment, and staff obligations visible.",
+    modules: [
+      "Biomedical Equipment Compliance",
+      "Facility Management and Safety",
+      "Human Resource and Staff Compliance",
+    ],
+  },
+  {
+    title: "Audit and improvement",
+    description: "Move findings through investigation, action, and closure.",
+    modules: ["Internal Audits", "RCA and CAPA"],
+  },
+  {
+    title: "Evidence and oversight",
+    description: "Bring documentation, clause mapping, and readiness into view.",
+    modules: [
+      "Document and Evidence Management",
+      "Hospital Clause Mapping",
+      "Dashboards and Audit Readiness",
+    ],
+  },
 ];
 
 const features = [
@@ -68,6 +92,8 @@ const features = [
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showAllModules, setShowAllModules] = useState(false);
 
   const scrollToModules = () => {
     document.getElementById("modules")?.scrollIntoView({
@@ -129,20 +155,69 @@ const LandingPage = () => {
             </a>
           </div>
 
-          <button
-            type="button"
-            onClick={() => navigate("/request-demo")}
-            className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:px-4 sm:text-sm"
-          >
-            Start Demo
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate("/request-demo")}
+              className="hidden shrink-0 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 sm:inline-flex"
+            >
+              Start Demo
+            </button>
+
+            <button
+              type="button"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
+              aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 md:hidden"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </nav>
+
+        {mobileMenuOpen && (
+          <div
+            id="mobile-navigation"
+            className="border-t border-emerald-100 bg-white px-4 py-4 shadow-lg md:hidden"
+          >
+            <div className="mx-auto grid max-w-7xl gap-1">
+              {[
+                ["About", "#about"],
+                ["Modules", "#modules"],
+                ["Features", "#features"],
+                ["Contact", "#contact"],
+              ].map(([label, href]) => (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800"
+                >
+                  {label}
+                </a>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/request-demo");
+                }}
+                className="mt-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                Start Demo
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero */}
       <section
         id="about"
-        className="relative isolate min-h-[680px] scroll-mt-20 overflow-hidden bg-slate-50"
+        className="relative isolate min-h-[620px] scroll-mt-20 overflow-hidden bg-slate-50"
       >
         <img
           src="/audit-hero.png"
@@ -151,9 +226,9 @@ const LandingPage = () => {
         />
 
         {/* Overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/10 lg:via-white/80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent lg:via-white/70" />
 
-        <div className="relative mx-auto flex min-h-[680px] max-w-7xl items-center px-4 py-20 sm:px-6 lg:px-8">
+        <div className="relative mx-auto flex min-h-[620px] max-w-7xl items-center px-4 py-16 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
               <Activity className="h-4 w-4" />
@@ -169,14 +244,13 @@ const LandingPage = () => {
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-7 text-slate-700 sm:text-lg">
-              Veerify AI helps hospitals execute, track, review, and prove
-              compliance across departments through structured workflows,
-              evidence records, dashboards, and audit trails.
+              Turn daily requirements into clear workflows, evidence,
+              corrective actions, and accountable reviews across departments.
             </p>
 
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-              Move from scattered registers and last-minute audit preparation
-              to continuous hospital readiness.
+              Replace scattered registers and last-minute preparation with a
+              continuous view of readiness.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -214,10 +288,9 @@ const LandingPage = () => {
           </div>
 
           <p className="text-lg leading-8 text-emerald-50/80">
-            Veerify AI converts compliance requirements into daily workflows,
-            evidence records, reviews, corrective actions, dashboards, and
-            audit trails. Hospitals can see what is completed, what is pending,
-            what evidence is available, and which departments need attention.
+            Give every department a shared view of completed work, pending
+            actions, available evidence, and items that need attention—without
+            waiting for the next audit cycle.
           </p>
         </div>
       </section>
@@ -243,21 +316,50 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {modules.map((module, index) => (
+          <div className="mt-12 grid gap-5 md:grid-cols-2">
+            {moduleGroups.map((group, index) => (
               <article
-                key={module}
-                className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md"
+                key={group.title}
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 font-bold text-emerald-700">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
+                <div className="flex items-start gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 font-bold text-emerald-700">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
 
-                <h3 className="font-semibold leading-snug text-slate-800 group-hover:text-emerald-800">
-                  {module}
-                </h3>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      {group.title}
+                    </h3>
+                    <p className="mt-1 leading-6 text-slate-600">
+                      {group.description}
+                    </p>
+                  </div>
+                </div>
+
+                <ul className="mt-5 space-y-2 border-t border-slate-100 pt-5">
+                  {(showAllModules ? group.modules : group.modules.slice(0, 2)).map(
+                    (module) => (
+                      <li key={module} className="flex gap-2.5 text-sm text-slate-700">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                        <span>{module}</span>
+                      </li>
+                    ),
+                  )}
+                </ul>
               </article>
             ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <button
+              type="button"
+              aria-expanded={showAllModules}
+              onClick={() => setShowAllModules((visible) => !visible)}
+              className="rounded-xl border border-emerald-600 bg-white px-6 py-3 font-semibold text-emerald-700 transition hover:bg-emerald-50"
+            >
+              {showAllModules ? "Show fewer modules" : "View all modules"}
+            </button>
           </div>
         </div>
       </section>
@@ -290,6 +392,48 @@ const LandingPage = () => {
                 <p className="mt-3 leading-7 text-slate-600">
                   {description}
                 </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust and data handling */}
+      <section className="border-y border-emerald-100 bg-emerald-50/60 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="font-semibold text-emerald-700">Responsible follow-up</p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+              A clear path from interest to conversation
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-slate-600">
+              Demo submissions collect only the contact details needed for the
+              Veerify AI team to respond.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {[
+              {
+                icon: ShieldCheck,
+                title: "Minimal contact details",
+                description: "Name, business email, and phone number are collected for follow-up.",
+              },
+              {
+                icon: FileCheck2,
+                title: "Structured handling",
+                description: "Submissions are recorded through the application backend for consistent review.",
+              },
+              {
+                icon: ClipboardCheck,
+                title: "Human response",
+                description: "Submitted details are used by the team to arrange and personalize the demo.",
+              },
+            ].map(({ icon: Icon, title, description }) => (
+              <article key={title} className="rounded-2xl border border-emerald-100 bg-white p-6">
+                <Icon className="h-7 w-7 text-emerald-700" />
+                <h3 className="mt-4 text-lg font-bold text-slate-900">{title}</h3>
+                <p className="mt-2 leading-7 text-slate-600">{description}</p>
               </article>
             ))}
           </div>
@@ -380,11 +524,14 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="border-t border-slate-200 py-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <p>© {new Date().getFullYear()} Veerify AI</p>
+          <p>{"\u00A9"} {new Date().getFullYear()} Veerify AI</p>
 
-          <p>
-            Hospital Audit Readiness and Hospital Compliance Execution System
-          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
+            <a href="/privacy" className="hover:text-emerald-700">
+              Privacy Policy
+            </a>
+            <p>Hospital Audit Readiness and Compliance Execution</p>
+          </div>
         </div>
       </footer>
     </main>

@@ -32,7 +32,7 @@ const RequestDemo = () => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Unable to submit demo request");
+        throw new Error(result.message || "Unable to submit your details");
       }
 
       form.reset();
@@ -41,7 +41,7 @@ const RequestDemo = () => {
       setError(
         submissionError instanceof Error
           ? submissionError.message
-          : "Unable to submit demo request",
+          : "Unable to submit your details",
       );
     } finally {
       setSubmitting(false);
@@ -57,7 +57,7 @@ const RequestDemo = () => {
           </span>
 
           <h1 className="mt-6 text-3xl font-bold text-slate-950">
-            Demo request received
+            Details submitted
           </h1>
 
           <p className="mt-4 leading-7 text-slate-600">
@@ -149,6 +149,7 @@ const RequestDemo = () => {
                     type="text"
                     autoComplete="given-name"
                     required
+                    maxLength={100}
                     className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                     placeholder="First name"
                   />
@@ -164,6 +165,7 @@ const RequestDemo = () => {
                     type="text"
                     autoComplete="family-name"
                     required
+                    maxLength={100}
                     className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                     placeholder="Last name"
                   />
@@ -180,6 +182,7 @@ const RequestDemo = () => {
                   type="email"
                   autoComplete="email"
                   required
+                  maxLength={254}
                   className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                   placeholder="name@hospital.com"
                 />
@@ -195,6 +198,10 @@ const RequestDemo = () => {
                   type="tel"
                   autoComplete="tel"
                   required
+                  minLength={7}
+                  maxLength={30}
+                  pattern="[0-9+() -]{7,30}"
+                  title="Enter a valid phone number using digits, spaces, +, parentheses, or hyphens"
                   className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                   placeholder="+91 98765 43210"
                 />
@@ -214,13 +221,17 @@ const RequestDemo = () => {
                 disabled={submitting}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 font-semibold text-white shadow-lg shadow-emerald-900/15 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting ? "Sending request..." : "Submit"}
+                {submitting ? "Sending..." : "Submit"}
                 {!submitting && <Send className="h-4 w-4" />}
               </button>
 
               <p className="text-center text-xs leading-5 text-slate-500">
                 By submitting this form, you agree that Veerify AI may contact
-                you about your demo request.
+                you about your demo. Read our{" "}
+                <Link to="/privacy" className="font-semibold text-emerald-700 underline-offset-2 hover:underline">
+                  Privacy Policy
+                </Link>
+                .
               </p>
             </form>
           </section>
