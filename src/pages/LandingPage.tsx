@@ -6,6 +6,7 @@ import {
   FileCheck2,
   LayoutDashboard,
   ListChecks,
+  Linkedin,
   Mail,
   Menu,
   Phone,
@@ -161,7 +162,7 @@ const LandingPage = () => {
               onClick={() => navigate("/request-demo")}
               className="hidden shrink-0 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 sm:inline-flex"
             >
-              Start Demo
+              Book a Demo
             </button>
 
             <button
@@ -207,7 +208,7 @@ const LandingPage = () => {
                 }}
                 className="mt-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
               >
-                Start Demo
+                Book a Demo
               </button>
             </div>
           </div>
@@ -259,7 +260,7 @@ const LandingPage = () => {
                 onClick={() => navigate("/request-demo")}
                 className="rounded-xl bg-emerald-600 px-6 py-3.5 font-semibold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-700"
               >
-                Start Demo
+                Book a Demo
               </button>
 
               <button
@@ -457,7 +458,7 @@ const LandingPage = () => {
             onClick={() => navigate("/request-demo")}
             className="mt-7 rounded-xl bg-white px-6 py-3.5 font-semibold text-emerald-800 transition hover:bg-emerald-50"
           >
-            Start Demo
+            Book a Demo
           </button>
         </div>
       </section>
@@ -481,9 +482,11 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
+          <div className="mx-auto mt-10 grid max-w-5xl gap-5 sm:grid-cols-3">
             <a
-              href="mailto:info@veerifyai.com"
+              href="https://mail.google.com/mail/?view=cm&fs=1&to=info@veerifyai.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md"
             >
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
@@ -514,6 +517,26 @@ const LandingPage = () => {
                 </span>
                 <span className="block font-semibold text-slate-900 group-hover:text-emerald-700">
                   +91 81810 16016
+                </span>
+              </span>
+            </a>
+
+            <a
+              href="https://www.linkedin.com/company/veerify-ai/?viewAsMember=true"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md"
+            >
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                <Linkedin className="h-6 w-6" />
+              </span>
+
+              <span>
+                <span className="block text-sm font-medium text-slate-500">
+                  LinkedIn
+                </span>
+                <span className="block font-semibold text-slate-900 group-hover:text-emerald-700">
+                  Follow Veerify AI
                 </span>
               </span>
             </a>

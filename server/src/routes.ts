@@ -30,20 +30,51 @@ router.post("/demo-requests", async (req: Request, res: Response) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    const validNamePattern = /^\p{L}+(?:[ '\-]\p{L}+)*$/u;
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (
+      !validNamePattern.test(firstName.trim()) ||
+      !validNamePattern.test(lastName.trim())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "First and last names may only contain letters, spaces, apostrophes, or hyphens",
+      });
+    }
+
+    const normalizedPhone = phone.trim();
+    const validPhonePattern = /^\+[1-9]\d{7,14}$/;
+
+    if (!validPhonePattern.test(normalizedPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid contact number",
+      });
+    }
+
+    const validEmailPattern =
+      /^[a-z0-9]+(?:[._%+-][a-z0-9]+)*@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i;
+
+    if (
+      normalizedEmail.length > 254 ||
+      !validEmailPattern.test(normalizedEmail)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Please enter a valid email address",
       });
     }
 
-    const demoRequest = await DemoRequestModel.create({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: normalizedEmail,
-      phone: phone.trim(),
-    });
+    const demoRequest =
+      mongoose.connection.readyState === 1
+        ? await DemoRequestModel.create({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: normalizedEmail,
+            phone: normalizedPhone,
+          })
+        : null;
 
     let notificationSent = true;
     try {
@@ -51,7 +82,7 @@ router.post("/demo-requests", async (req: Request, res: Response) => {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: normalizedEmail,
-        phone: phone.trim(),
+        phone: normalizedPhone,
       });
     } catch (notificationError) {
       notificationSent = false;
@@ -61,7 +92,7 @@ router.post("/demo-requests", async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       message: "Submitted",
-      data: { id: demoRequest._id, notificationSent },
+      data: { id: demoRequest?._id ?? null, notificationSent },
     });
   } catch (error) {
     console.error("Submission error:", error);

@@ -43,3 +43,6 @@ coverage/
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
+
+.vite-dev.stderr.log
+.vite-dev.stdout.log

@@ -6,12 +6,21 @@ import { connectDatabase } from "./database.js";
 
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
-const port = Number.parseInt(process.env.PORT || "4001", 10);
+const port = Number.parseInt(process.env.PORT || "4002", 10);
 
 const startServer = async () => {
   console.log(`Starting server on port: ${port}`);
-  await connectDatabase();
-  console.log("MongoDB connected successfully");
+
+  try {
+    await connectDatabase();
+    console.log("MongoDB connected successfully");
+  } catch (error) {
+    console.warn(
+      "MongoDB is unavailable; API requests requiring the database will return an error.",
+      error,
+    );
+  }
+
   app.listen(port, "0.0.0.0", () => {
     console.log(`API server running on port ${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || "development"}`);

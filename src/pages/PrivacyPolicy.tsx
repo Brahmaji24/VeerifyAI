@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 
 const sections = [
   {
-    title: "Information we collect",
+    title: "Information we Collect",
     content:
       "When you submit the demo form, we collect the name, email address, and phone number you provide. We also receive standard technical information needed to operate and protect the website and its services.",
   },
   {
     title: "How we use it",
     content:
-      "We use demo-form details to respond to your enquiry, arrange a demonstration, understand your organisation's needs, and maintain a record of the submission.",
+      "We use Demo-form details to respond to your enquiry, arrange a demonstration, understand your organisation's needs, and maintain a record of the submission.",
   },
   {
     title: "Where it is processed",
@@ -18,12 +18,12 @@ const sections = [
       "Demo submissions are handled by the Veerify AI backend, stored in MongoDB, and sent to Formspree for email-notification delivery. These providers process information on our behalf to operate this workflow.",
   },
   {
-    title: "Sharing and retention",
+    title: "Sharing and Retention",
     content:
       "We do not sell demo-form details. We share them only with service providers required to operate the submission workflow or when required by law. We retain information only for as long as reasonably necessary for these purposes.",
   },
   {
-    title: "Your choices",
+    title: "Your Choices",
     content:
       "You may ask us to correct or delete the contact information submitted through the demo form, subject to applicable legal and operational requirements.",
   },
@@ -63,7 +63,9 @@ const PrivacyPolicy = () => (
             <p className="mt-3 leading-7 text-slate-600">
               For privacy questions or data enquiries, email{" "}
               <a
-                href="mailto:info@veerifyai.com"
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=info@veerifyai.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="font-semibold text-emerald-700 hover:underline"
               >
                 info@veerifyai.com
