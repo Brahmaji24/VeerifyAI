@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { ArrowLeft, CheckCircle2, Mail, Phone, Send } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Linkedin, Mail, Phone, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const RequestDemo = () => {
@@ -135,6 +135,16 @@ const RequestDemo = () => {
               >
                 <Phone className="h-5 w-5 text-emerald-300" />
                 +91 81810 16016
+              </a>
+
+              <a
+                href="https://www.linkedin.com/company/veerify-ai/?viewAsMember=true"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 hover:text-white"
+              >
+                <Linkedin className="h-5 w-5 text-emerald-300" />
+                Follow Veerify AI
               </a>
             </div>
           </section>
