@@ -11,11 +11,6 @@ export default defineConfig({
         target: "http://localhost:4001",
         changeOrigin: true,
       },
-      "/chatbot-api": {
-        target: "http://localhost:5000",
-        changeOrigin: true,
-        rewrite: (requestPath) => requestPath.replace(/^\/chatbot-api/, "/api"),
-      },
     },
   },
   plugins: [react()],
